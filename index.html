@@ -11,10 +11,14 @@
     <div v-scope="Flashcards()" @vue:mounted="mounted" v-cloak class="container">
       <ul class="cards" ref="scrollContainer">
         <li v-for="card, index in cards" :key="card.id">
-          <div class="card" :id="card.id">
+          <div class="card" :id="card.id" @click="flipCard(card.id)">
             <div class="inner">
               <div class="front">{{card.front}}</div>
-              <div class="back">{{card.back}}...Back</div>
+              <div class="back">
+                <img v-if="card.back.startsWith('http')" :src="card.back" alt="" />
+                <div v-else>
+                  {{card.back}}
+                </div>
             </div>
           </div>
         </li>
@@ -55,7 +59,8 @@
             </div>
           </button>
         </div>
-        <button @click="flip(activeCard)" class="squircle neutral" :disabled="!activeCard">
+        {{activeCard}}
+        <button @click="flipCard(activeCard)" class="squircle neutral" :disabled="!activeCard">
           <svg viewBox="0 0 200 200">
             <path d="M0 100C0 12 12 0 100 0s100 12 100 100-12 100-100 100S0 188 0 100" />
           </svg>

@@ -39,6 +39,11 @@ body {
   display: none !important;
 }
 
+img {
+  width: 100%;
+  height: auto;
+}
+
 button {
   -webkit-tap-highlight-color: transparent;
   background: none;
@@ -62,14 +67,17 @@ input {
 .container {
   display: flex;
   flex-direction: column;
-  gap: var(--size-base);
+  height: 100dvh;
+  justify-content: space-between;
   margin: 0 auto;
   max-width: calc(100vh * 63 / 88);
+  padding: var(--size-base) 0;
   width: 100vw;
 }
 
-.cards {
+ul.cards {
   display: flex;
+  flex-grow: 1;
   gap: var(--size-4x);
   margin: 0 auto;
   max-width: inherit;
@@ -80,20 +88,20 @@ input {
   mask-image: linear-gradient(to right, transparent, white 2%, white 98%, transparent 100%);
 }
 
-.cards::-webkit-scrollbar {
+ul.cards::-webkit-scrollbar {
   display: none;
 }
 
-.cards > li {
+ul.cards > li {
   max-width: inherit;
-  padding: var(--size-base) var(--size-base);
+  padding:  var(--size-base)  var(--size-base) var(--size-2x) var(--size-base);
   scroll-snap-align: center;
   width: inherit;
 }
 
 .card {
   aspect-ratio: 63 / 88;
-  max-height: calc(100vh - 8rem);
+  max-height: 100%;
   max-width: 100%;
   opacity: 1;
   perspective: 30rem;
@@ -121,7 +129,7 @@ input {
   border: var(--size-half) solid var(--color-background-lightest);
   display: flex;
   flex-direction: column;
-  font-size: 12cqh;
+  font-size: 12cqw;
   font-weight: 800;
   gap: var(--size-half);
   height: 100%;
@@ -171,10 +179,11 @@ input {
 }
 
 .controls {
+  align-items: center;
   display: flex;
   gap: var(--size-base);
-  padding: 0 var(--size-base);
   justify-content: space-between;
+  padding: 0 var(--size-base);
 }
 
 .controls > :first-child {
@@ -184,6 +193,7 @@ input {
 
 .squircle {
   align-items: center;
+  color: inherit;
   aspect-ratio: 1;
   display: grid;
   font-weight: bold;
