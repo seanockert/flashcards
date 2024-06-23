@@ -4,31 +4,27 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Flash cards</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <!-- <link href="https://fonts.googleapis.com/css2?family=Edu+QLD+Beginner:wght@400..700&display=swap" rel="stylesheet"> -->
+    <link href="https://fonts.googleapis.com/css2?family=ABeeZee&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="assets/style.css" type="text/css" />
+    <!-- <script src="assets/fitty.min.js"></script> -->
+    <script src="assets/textFit.min.js"></script>
     <script src="assets/script.js" type="module"></script>
   </head>
   <body>
-    <div v-scope="Flashcards()" @vue:mounted="mounted" v-cloak class="container">
+    <div v-scope="Flashcards()" @vue:mounted="mounted" v-cloak class="container stack">
       <ul class="cards" ref="scrollContainer">
         <li v-for="card, index in cards" :key="card.id">
           <div class="card" :id="card.id" @click="flipCard(card.id)">
             <div class="inner">
-              <div class="front">{{card.front}}</div>
-              <div class="back">
+              <div class="front stack">{{card.front || '...'}}</div>
+              <div class="back stack">
                 <img v-if="card.back.startsWith('http')" :src="card.back" alt="" />
                 <div v-else>
-                  {{card.back}}
+                  {{card.back || '...'}}
                 </div>
-            </div>
-          </div>
-        </li>
-        <li>
-          <div class="card card-add">
-            <div class="inner">
-              <div class="front">
-                <input placeholder="Add card" v-model="newCardInput" @keydown.enter="addCard" />
-                <button @click="addCard">Add</button>
-              </div>
             </div>
           </div>
         </li>
@@ -36,7 +32,7 @@
 
       <div class="controls">
         <div>
-          <button @click="rate(activeCard, 'positive')" class="squircle positive" :disabled="!activeCard">
+          <button @click="rate(activeCard, 'easy')" title="Easy" class="squircle positive" :disabled="!activeCard">
             <svg viewBox="0 0 200 200">
               <path d="M0 100C0 12 12 0 100 0s100 12 100 100-12 100-100 100S0 188 0 100" />
             </svg>
@@ -47,7 +43,7 @@
               </svg>
             </div>
           </button>
-          <button @click="rate(activeCard, 'negative')" class="squircle negative" :disabled="!activeCard">
+          <button @click="rate(activeCard, 'hard')" title="Hard" class="squircle negative" :disabled="!activeCard">
             <svg viewBox="0 0 200 200">
               <path d="M0 100C0 12 12 0 100 0s100 12 100 100-12 100-100 100S0 188 0 100" />
             </svg>
@@ -59,19 +55,37 @@
             </div>
           </button>
         </div>
-        {{activeCard}}
-        <button @click="flipCard(activeCard)" class="squircle neutral" :disabled="!activeCard">
+
+        <button  class="squircle neutral" popovertarget="settings">
           <svg viewBox="0 0 200 200">
             <path d="M0 100C0 12 12 0 100 0s100 12 100 100-12 100-100 100S0 188 0 100" />
           </svg>
           <div>
             <svg viewBox="0 0 24 24" class="icon">
-              <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
-              <circle cx="12" cy="12" r="3" />
+              <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 8.25V6a2.25 2.25 0 0 0-2.25-2.25H6A2.25 2.25 0 0 0 3.75 6v8.25A2.25 2.25 0 0 0 6 16.5h2.25m8.25-8.25H18a2.25 2.25 0 0 1 2.25 2.25V18A2.25 2.25 0 0 1 18 20.25h-7.5A2.25 2.25 0 0 1 8.25 18v-1.5m8.25-8.25h-6a2.25 2.25 0 0 0-2.25 2.25v6"/>
             </svg>
           </div>
         </button>
       </div>
+
+      <div popover id="settings">
+        <div class="stack">
+          <h3>Edit cards</h3>
+          <ul class="stack">
+            <li v-for="card, index in cards" :key="card.id">
+              <input placeholder="Label..." v-model="card.front" @keydown.enter="updateState" />
+              <button @click="removeCard(card.id)">&times;</button>
+            </li>
+            <li>
+              <input placeholder="Add card" v-model="newCardInput" @keydown.enter="addCard" />
+              <button @click="addCard">+</button>
+            </li>
+          </ul>
+        </div>
+      </div>
     </div>
+
+
+
   </body>
 </html>
