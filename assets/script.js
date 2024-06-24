@@ -1,101 +1,140 @@
 import { createApp } from './petite-vue.es.js';
 
-function uuid() {
+const maxWeight = 10;
+const minWeight = 1;
+const queueSize = 5;
+const weightDecrease = 0.5;
+const weightIncrease = 2;
+
+const uuid = () => {
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
   let id = '';
   for (let i = 0; i < 6; i++) {
     id += chars.charAt(Math.floor(Math.random() * chars.length));
   }
   return id;
-}
-
-const randomizeItemsAfter = (array, id) => {
-  const index = array.findIndex((item) => item.id === id);
-  if (index === -1) return array;
-
-  const randomized = array.slice(index + 1).sort(() => Math.random() - 0.5);
-  return [...array.slice(0, index + 1), ...randomized];
 };
 
-const maxWeight = 10;
-const minWeight = 1;
-const weightIncrease = 2;
-const weightDecrease = 0.5;
-const queueSize = 5;
+const updateUrlParam = (key, value) => {
+  let url = new URL(window.location.href);
+
+  if (value) {
+    url.searchParams.set(key, value);
+  } else {
+    url.searchParams.delete(key);
+  }
+
+  window.history.pushState({}, '', url);
+};
+
+// Helper function to find the next item in an array by ID
+const findNextItem = (id, items) => {
+  const index = items.findIndex((item) => item.id === id);
+  return items[(index + 1) % items.length];
+};
 
 const testCards = [
   {
     id: 'c1',
-    front: 'Scroll right',
-    back: '',
-    weight: 1,
-    ease: 1
-  },
-  {
-    id: 'c2',
-    front: 'Turtle',
+    front: 'Flash cards',
     back: 'https://media.istockphoto.com/id/1254985253/vector/cartoon-water-turtle-on-a-blue-background.jpg?s=612x612&w=0&k=20&c=uQJSUWEiVRiLRq6mwIRiMPqob1_SanVvSnM5QzXZpmM=',
-    weight: 1,
-    ease: 1
-  },
-  {
-    id: 'c3',
-    front: 'Elephant',
-    back: '',
-    weight: 1,
-    ease: 1
-  },
-  {
-    id: 'c4',
-    front: 'Dog',
-    back: '',
-    weight: 1,
-    ease: 1
-  },
-  {
-    id: 'c5',
-    front: 'Chicken',
-    back: '',
     weight: 1,
     ease: 1
   }
 ];
 
+const testDeck = {
+  id: uuid(),
+  cards: testCards
+};
+
 function Flashcards(props) {
   return {
-    activeCard: null,
-    cards: [],
+    activeCardId: null,
+    activeDeck: null,
+    decks: [testDeck],
     newCardInput: '',
     observer: null,
     reviewQueue: [],
-    storageKey: 'flashcards',
+    storageKey: 'fc_decks',
     mounted() {
       // Get cards from storage
       const storedData = localStorage.getItem(this.storageKey);
-      this.cards = storedData ? JSON.parse(storedData) : this.cards;
+      // this.cards = storedData ? JSON.parse(storedData) : this.cards;
+      this.decks = storedData ? JSON.parse(storedData) : this.decks;
+
+      const urlParams = new URLSearchParams(window.location.search);
+      const deckId = urlParams.get('d');
+
+      if (deckId) {
+        this.selectDeck(deckId);
+      }
+
+      window.addEventListener('popstate', this.updateQueryParam);
 
       // Update when list changes
-      window.addEventListener('storage', this.handleStorageChange);
+      // window.addEventListener('storage', this.handleStorageChange);
+      this.updateState(true);
+    },
+    set cardsContent(newValue) {
+      if (!this.activeDeck) {
+        return;
+      }
 
-      this.$nextTick(() => {
-        textFit(document.getElementsByClassName('front'), { minFontSize: 24, maxFontSize: 160 });
-        this.createObserver();
+      const newFronts = newValue.split('\n');
+      const updatedCards = [];
+
+      for (let i = 0; i < newFronts.length; i++) {
+        const [front, back] = newFronts[i].split(',');
+        if (i < this.activeDeck.cards.length) {
+          // Update existing card
+          updatedCards.push({ ...this.activeDeck.cards[i], front: front.trim(), back: back?.trim() ?? '' });
+        } else {
+          // Add new card if it's not empty or not the last line
+          updatedCards.push({
+            id: uuid(),
+            front: front.trim(),
+            back: back?.trim() ?? '',
+            weight: 1,
+            ease: 1
+          });
+        }
+      }
+
+      this.activeDeck.cards = [...updatedCards];
+      this.updateState(true);
+    },
+    get cardsContent() {
+      // return this.activeDeck ? this.activeDeck.cards.map((card) => `${card.front} , ${card.back}`).join('\n') : '';
+      return this.activeDeck ? this.activeDeck.cards.map((card) => card.front).join('\n') : '';
+    },
+    addDeck() {
+      const deckId = uuid();
+      this.decks.push({
+        id: deckId,
+        cards: [{ id: uuid(), front: 'First card', back: '', weight: 1, ease: 1 }]
       });
+      this.activeDeck = this.decks[this.decks.length - 1];
+      this.selectDeck(deckId);
     },
-    addCard() {
-      this.cards.push({ id: uuid(), front: this.newCardInput, back: '' });
-      this.newCardInput = '';
-      this.updateState(true);
+    selectDeck(deckId) {
+      this.reviewQueue = [];
+      this.activeDeck = this.decks.find((deck) => deck.id === deckId);
+      updateUrlParam('d', deckId);
+      this.updateState(!!deckId);
     },
-    removeCard(id) {
-      this.cards = this.cards.filter((card) => card.id !== id);
-      this.updateState(true);
+    removeDeck(deckId) {
+      if (confirm('Delete this deck?')) {
+        this.activeDeck = null;
+        this.decks = this.decks.filter((deck) => deck.id !== deckId);
+        this.updateState();
+      }
     },
-    flipCard(id) {
-      document.getElementById(id)?.classList.toggle('flipped');
+    flipCard(cardId) {
+      document.getElementById(cardId)?.classList.toggle('flipped');
     },
-    rate(id, rating) {
-      const card = this.cards.find((c) => c.id === id);
+    rate(cardId, rating) {
+      const card = this.activeDeck.cards.find((c) => c.id === cardId);
       card.weight =
         rating === 'hard'
           ? Math.min(card.weight * weightIncrease, maxWeight)
@@ -105,27 +144,22 @@ function Flashcards(props) {
       this.enqueueCards();
 
       if (this.enqueueCards.length > 0) {
-        this.cards.push(...this.enqueueCards);
+        this.activeDeck.cards.push(...this.enqueueCards);
       }
 
       // Scroll to next card
-      const nextCard = this.findNextItem(id, this.cards);
+      const nextCard = findNextItem(cardId, this.activeDeck.cards);
       document.getElementById(nextCard.id).scrollIntoView({ behavior: 'smooth' });
       this.updateState(true);
     },
-    findNextItem(id, items) {
-      // Helper function to find the next item in an array by ID
-      const index = items.findIndex((item) => item.id === id);
-      return items[(index + 1) % items.length];
-    },
     enqueueCards() {
-      let totalWeight = this.cards.reduce((sum, card) => sum + card.weight, 0);
+      let totalWeight = this.activeDeck.cards.reduce((sum, card) => sum + card.weight, 0);
       const remainingSlots = queueSize - this.reviewQueue.length;
 
       for (let i = 0; i < remainingSlots; i++) {
         let randomWeight = Math.random() * totalWeight;
 
-        for (const card of this.cards) {
+        for (const card of this.activeDeck.cards) {
           randomWeight -= card.weight;
           if (randomWeight <= 0) {
             this.reviewQueue.push(card);
@@ -147,16 +181,13 @@ function Flashcards(props) {
 
           entries.forEach((entry) => {
             if (entry.isIntersecting) {
-              this.activeCard = entry.target.id;
+              this.activeCardId = entry.target.id;
               isIntersecting = true;
-
-              // Change card order
-              // this.cards = randomizeItemsAfter(this.cards, this.activeCard);
             }
           });
 
           if (!isIntersecting) {
-            this.activeCard = null;
+            this.activeCardId = null;
           }
         },
         {
@@ -165,7 +196,7 @@ function Flashcards(props) {
         }
       );
 
-      this.cards.forEach((card) => {
+      this.activeDeck.cards.forEach((card) => {
         const elem = document.getElementById(card.id);
 
         if (elem) {
@@ -174,14 +205,28 @@ function Flashcards(props) {
       });
     },
     updateState(modifiedList) {
-      localStorage.setItem(this.storageKey, JSON.stringify(this.cards));
-      if (modifiedList) {
-        this.$nextTick(() => this.createObserver());
+      localStorage.setItem(this.storageKey, JSON.stringify(this.decks));
+
+      if (!this.activeDeck) {
+        return;
+      }
+
+      this.$nextTick(() => {
+        if (modifiedList) {
+          textFit(document.getElementsByClassName('front'), { minFontSize: 24, maxFontSize: 160 });
+          this.createObserver();
+        }
+      });
+    },
+    updateQueryParam() {
+      const queryParam = new URLSearchParams(window.location.search).get('d');
+      if (!queryParam) {
+        this.selectDeck(null);
       }
     },
     handleStorageChange(event) {
       if (event.key === this.storageKey) {
-        this.cards = JSON.parse(event.newValue);
+        this.activeDeck.cards = JSON.parse(event.newValue);
         this.$nextTick(() => this.createObserver());
       }
     }
@@ -191,8 +236,3 @@ function Flashcards(props) {
 createApp({
   Flashcards
 }).mount();
-
-// fitty('.fit', {
-//   minSize: 32,
-//   maxSize: 300
-// });

@@ -1,20 +1,20 @@
 :root {
-  --size-half: 0.375rem;
-  --size-base: 0.75rem;
+  --color-background-darker: hsl(38, 44%, 85%);
+  --color-background-light: hsl(38, 44%, 99%);
+  --color-background-lightest: hsl(38, 44%, 100%);
+  --color-background-negative: hsl(10, 44%, 90%);
+  --color-background-neutral: hsl(38, 44%, 90%);
+  --color-background-positive: hsl(126, 44%, 90%);
+  --color-background: hsl(38, 44%, 96%);
+  --color-shadow: hsla(38, 30%, 70%, 0.4);
+  --color-text: hsl(38, 0, 14%);
+  --color-yellow: hsl(38, 95%, 66%);
   --size-2x: 1.5rem;
   --size-3x: 2.25rem;
   --size-4x: 3rem;
-  --color-background: hsl(38, 44%, 96%);
-  --color-background-darker: hsl(38, 44%, 85%);
-  --color-background-light: hsl(38, 44%, 98%);
-  --color-background-lightest: hsl(38, 44%, 100%);
-  --color-background-positive: hsl(126, 44%, 90%);
-  --color-background-negative: hsl(10, 44%, 90%);
-  --color-background-neutral: hsl(38, 44%, 90%);
-  --color-yellow: hsl(38, 95%, 66%);
-  --color-text: hsl(38, 0, 14%);
-  --color-shadow: hsla(38, 30%, 70%, 0.3);
-  --shadow-elevation-medium: 0.3px 0.5px 0.7px var(--color-shadow), 0.8px 1.6px 2px -0.8px var(--color-shadow),
+  --size-base: 0.75rem;
+  --size-half: 0.375rem;
+  --shadow-default: 0.3px 0.5px 0.7px var(--color-shadow), 0.8px 1.6px 2px -0.8px var(--color-shadow),
     2.1px 4.1px 5.2px -1.7px var(--color-shadow), 5px 10px 12.6px -2.5px var(--color-shadow);
 }
 
@@ -57,16 +57,30 @@ button {
   font: inherit;
   line-height: 1;
   padding: var(--size-base);
+  transition: all 0.15s ease-out;
 }
 
 ul {
   list-style: none;
 }
 
-input {
-  font: inherit;
+textarea {
+  --webkit-tap-highlight-color: transparent;
+  border-radius: var(--size-base);
+  border: 1px solid var(--color-background-darker);
+  box-shadow: none;
+  font-family: inherit;
+  font-size: 1.25rem;
+  outline: none;
   padding: var(--size-base);
   width: 100%;
+}
+
+textarea {
+  field-sizing: content;
+  line-height: 1.4;
+  min-height: 4rem;
+  resize: none;
 }
 
 .stack {
@@ -85,24 +99,24 @@ input {
   width: 100vw;
 }
 
-ul.cards {
+.cards {
   display: flex;
   flex-grow: 1;
   gap: var(--size-4x);
   margin: 0 auto;
+  mask-image: linear-gradient(to right, transparent, white 2%, white 98%, transparent 100%);
   max-width: inherit;
   overflow: auto;
   perspective: 30rem;
   scroll-snap-type: x mandatory;
   width: inherit;
-  mask-image: linear-gradient(to right, transparent, white 2%, white 98%, transparent 100%);
 }
 
-ul.cards::-webkit-scrollbar {
+.cards::-webkit-scrollbar {
   display: none;
 }
 
-ul.cards > li {
+.cards > li {
   max-width: inherit;
   padding: var(--size-base) var(--size-base) var(--size-2x) var(--size-base);
   scroll-snap-align: center;
@@ -121,13 +135,15 @@ ul.cards > li {
 
 .card > .inner {
   border-radius: var(--size-base);
-  box-shadow: var(--shadow-elevation-medium);
+  box-shadow: var(--shadow-default);
   transform-style: preserve-3d;
-  transition: transform 0.5s ease-in-out;
+  transition: transform 0.3s ease-in-out;
   height: 100%;
 }
 
 .card.flipped > .inner {
+  --shadow-default: -0.3px 0.5px 0.7px var(--color-shadow), -0.8px 1.6px 2px -0.8px var(--color-shadow),
+    -2.1px 4.1px 5.2px -1.7px var(--color-shadow), -5px 10px 12.6px -2.5px var(--color-shadow);
   transform: rotateY(180deg);
 }
 
@@ -156,33 +172,6 @@ ul.cards > li {
   transform: rotateY(180deg);
 }
 
-@keyframes fancy-in {
-  0% {
-    transform: scale(0.8) perspective(30rem) rotate(6deg) rotateY(20deg);
-  }
-  50% {
-    opacity: 1;
-    transform: rotate(0deg);
-  }
-  90% {
-    opacity: 1;
-    transform: translate3d(90%, 0%, 0%) scale(0.8) perspective(30rem) rotate(-6deg) rotateY(-20deg);
-  }
-  100% {
-    opacity: 0;
-    transform: translate3d(100%, 10%, 0) scale(0.8) rotate(-3deg) rotateY(0);
-  }
-}
-
-@media (prefers-reduced-motion: no-preference) {
-  @supports (animation-timeline: view(x)) {
-    .card {
-      animation: fancy-in ease-in-out both;
-      animation-timeline: view(x);
-    }
-  }
-}
-
 .controls {
   align-items: center;
   display: flex;
@@ -191,9 +180,72 @@ ul.cards > li {
   padding: 0 var(--size-base);
 }
 
-.controls > :first-child {
+.controls > div {
   display: flex;
   gap: var(--size-base);
+}
+
+.decks {
+  --rows: 2;
+  display: grid;
+  gap: var(--size-base);
+  grid-template-columns: repeat(var(--rows), minmax(0, 1fr));
+  list-style: none;
+  padding: var(--size-base);
+}
+
+.decks > li {
+  position: relative;
+  transition: all 0.15s ease-out;
+}
+
+.remove {
+  color: var(--color-background-darker);
+  font-size: 2rem;
+  right: 0;
+  line-height: 0;
+  padding: var(--size-base);
+  position: absolute;
+  top: 0;
+}
+
+.remove > .icon {
+  height: 1.4rem;
+  stroke-width: 3;
+  width: 1.4rem;
+}
+
+.remove:hover,
+.remove:focus {
+  color: inherit;
+}
+
+.deck {
+  align-items: center;
+  aspect-ratio: 66 / 88;
+  background-color: var(--color-background-lightest);
+  border-radius: var(--size-base);
+  box-shadow: var(--shadow-default);
+  color: inherit;
+  font-size: clamp(1.25rem, 3cqw, 3rem);
+  justify-content: center;
+  overflow: hidden;
+  padding: var(--size-base);
+  width: 100%;
+}
+
+.deck-add {
+  background-color: transparent;
+  border: 4px dashed var(--color-background-darker);
+  box-shadow: none;
+  color: var(--color-background-darker);
+  font-weight: 700;
+}
+
+.deck-add > .icon {
+  height: 4rem;
+  stroke-width: 4;
+  width: 4rem;
 }
 
 .squircle {
@@ -205,7 +257,6 @@ ul.cards > li {
   justify-content: center;
   padding: 0;
   text-align: center;
-  transition: all 0.15s ease-out;
   width: 4rem;
 }
 
@@ -227,11 +278,14 @@ ul.cards > li {
   width: var(--size-3x);
 }
 
+.decks > li:hover,
+.decks > li:focus,
 button.squircle:hover,
 button.squircle:focus {
-  scale: 1.05;
+  scale: 1.03;
 }
 
+.decks > li:active,
 button.squircle:active {
   scale: 0.95;
 }
@@ -248,35 +302,71 @@ button.squircle:active {
   --bg: var(--color-background-neutral);
 }
 
-:where([popover]) {
-  margin: auto;
-}
-
 [popover] {
   background-color: var(--color-background-lightest);
   border-radius: var(--size-half);
   border: none;
+  box-shadow: var(--shadow-default);
   font: inherit;
+  height: 100%;
+  margin: var(--size-base) auto;
+  max-height: calc(100dvh - var(--size-2x));
   max-width: 40rem;
-  overflow: auto;
-  padding: var(--size-base);
-  width: 100%;
+  padding: var(--size-base) 0;
+  width: calc(100% - var(--size-2x));
 }
 
-[popover] > div {
-  gap: var(--size-base);
+[popover] .stack {
+  height: 100%;
+}
+
+[popover] h3 {
+  padding: 0 var(--size-base);
+}
+
+[popover] textarea {
+  border: none;
+  flex: 1;
 }
 
 [popover]::backdrop {
-  animation: fade-in 0.25s;
   backdrop-filter: blur(4px);
-  background: hsl(0 0% 0% / 0.25);
+  background: hsl(0 0% 0% / 0.15);
 }
 
-[popover]:popover-open {
-  animation: pop 0.25s ease-in;
+[popover] .remove {
+  color: inherit;
 }
 
-#settings li {
-  display: flex;
+@keyframes fancy-in {
+  0% {
+    transform: scale(0.8) perspective(30rem) rotate(6deg) rotateY(20deg);
+  }
+  50% {
+    opacity: 1;
+    transform: rotate(0deg);
+  }
+  90% {
+    opacity: 1;
+    transform: translate3d(90%, 0%, 0%) scale(0.8) perspective(30rem) rotate(-6deg) rotateY(-20deg);
+  }
+  100% {
+    opacity: 0;
+    transform: translate3d(100%, 10%, 0) scale(0.8) rotate(-3deg) rotateY(0);
+  }
+}
+
+@media (min-width: 40rem) {
+  .decks {
+    --rows: 4;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  @supports (animation-timeline: view(x)) {
+    .card {
+      animation: fancy-in ease-in-out both;
+      animation-timeline: view(x);
+    }
+  }
 }
