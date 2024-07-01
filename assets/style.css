@@ -1,5 +1,5 @@
 :root {
-  --color-background-darker: hsl(38, 44%, 85%);
+  --color-background-darker: hsl(37, 45%, 85%);
   --color-background-light: hsl(38, 44%, 99%);
   --color-background-lightest: hsl(38, 44%, 100%);
   --color-background-negative: hsl(10, 44%, 90%);
@@ -7,7 +7,7 @@
   --color-background-positive: hsl(126, 44%, 90%);
   --color-background: hsl(38, 44%, 96%);
   --color-shadow: hsla(38, 30%, 70%, 0.4);
-  --color-text: hsl(38, 0, 14%);
+  --color-text: hsl(0, 0%, 14%);
   --color-yellow: hsl(38, 95%, 66%);
   --size-2x: 1.5rem;
   --size-3x: 2.25rem;
@@ -97,6 +97,7 @@ textarea {
   max-width: calc(100dvh * 63 / 88);
   padding: var(--size-base) 0;
   width: 100vw;
+  view-transition-name: container;
 }
 
 .cards {
@@ -117,6 +118,7 @@ textarea {
 }
 
 .cards > li {
+  height: 100%;
   max-width: inherit;
   padding: var(--size-base) var(--size-base) var(--size-2x) var(--size-base);
   scroll-snap-align: center;
@@ -134,7 +136,7 @@ textarea {
 }
 
 .card > .inner {
-  border-radius: var(--size-base);
+  border-radius: var(--size-2x);
   box-shadow: var(--shadow-default);
   transform-style: preserve-3d;
   transition: transform 0.3s ease-in-out;
@@ -224,7 +226,7 @@ textarea {
   align-items: center;
   aspect-ratio: 66 / 88;
   background-color: var(--color-background-lightest);
-  border-radius: var(--size-base);
+  border-radius: var(--size-2x);
   box-shadow: var(--shadow-default);
   color: inherit;
   font-size: clamp(1.25rem, 3cqw, 3rem);
@@ -304,7 +306,7 @@ button.squircle:active {
 
 [popover] {
   background-color: var(--color-background-lightest);
-  border-radius: var(--size-half);
+  border-radius: var(--size-base);
   border: none;
   box-shadow: var(--shadow-default);
   font: inherit;
@@ -338,7 +340,11 @@ button.squircle:active {
   color: inherit;
 }
 
-@keyframes fancy-in {
+html:has([popover]:popover-open) {
+  overflow: hidden;
+}
+
+@keyframes cardInOut {
   0% {
     transform: scale(0.8) perspective(30rem) rotate(6deg) rotateY(20deg);
   }
@@ -362,10 +368,57 @@ button.squircle:active {
   }
 }
 
+@media screen and (orientation: landscape) and (max-width: 56rem) and (max-height: 27rem) {
+  .container {
+    flex-direction: row;
+    max-width: 100%;
+  }
+
+  .cards > li {
+    padding: var(--size-base);
+  }
+
+  .controls,
+  .controls > div {
+    flex-direction: column;
+  }
+
+  .card {
+    aspect-ratio: 88 / 63;
+  }
+}
+
+@keyframes scale-out {
+  to {
+    scale: 0;
+  }
+}
+
+@keyframes scale-in {
+  from {
+    scale: 0;
+  }
+  to {
+    scale: 1;
+  }
+}
+
+::view-transition-old([class^='deck_']) {
+  animation: 0.15s ease-in both scale-out;
+}
+
+::view-transition-old(container) {
+  animation: 0.15s ease-in both scale-out;
+}
+
+::view-transition-new(container) {
+  animation: 0.15s ease-in both scale-in;
+}
+
 @media (prefers-reduced-motion: no-preference) {
   @supports (animation-timeline: view(x)) {
     .card {
-      animation: fancy-in ease-in-out both;
+      animation: cardInOut ease-in-out both;
       animation-timeline: view(x);
     }
   }

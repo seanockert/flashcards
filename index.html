@@ -3,25 +3,33 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black" />
+    <meta name="apple-mobile-web-app-title" content="FlashCards" />
+    <meta name="theme-color" content="#eaddc8" />
     <title>Flash cards</title>
+    <link rel="apple-touch-icon" href="/icon.png" />
+    <link rel="shortcut icon" href="/icon.png" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=ABeeZee&display=swap" rel="stylesheet" />
+    <link rel="manifest" href="/manifest.json" />
     <link rel="stylesheet" href="assets/style.css" type="text/css" />
     <script src="assets/textFit.min.js"></script>
+    <script src="assets/localforage.min.js" type="module"></script>
     <script src="assets/script.js" type="module"></script>
   </head>
   <body>
     <div v-scope="Flashcards()" @vue:mounted="mounted" v-cloak>
       <div v-if="activeDeck" class="container stack">
         <ul class="cards" ref="scrollContainer">
-          <li v-for="card in activeDeck?.cards" :key="card.front">
-            <div class="card" :id="card.id" @click="flipCard(card.id)">
+          <li v-for="card in activeDeck?.cards" :key="card.front" :data-id="card.id">
+            <div class="card" :id="card.id" @click="() => { if (card.back) { flipCard(card.id); } }">
               <div class="inner">
                 <div class="front stack">{{card.front || '...'}}</div>
-                <div class="back stack">
+                <div v-if="card.back" class="back stack">
                   <img v-if="card.back.startsWith('http')" :src="card.back" alt="" />
-                  <div v-else>{{card.back || '...'}}</div>
+                  <div v-else>{{card.back}}</div>
                 </div>
               </div>
             </div>
@@ -41,6 +49,7 @@
               </svg>
               <div>
                 <svg viewBox="0 0 24 24" class="icon">
+                  <title>Rate as easy</title>
                   <circle cx="12" cy="12" r="10" />
                   <path d="M8 14s1.5 2 4 2 4-2 4-2M9 9h.01M15 9h.01" />
                 </svg>
@@ -57,6 +66,7 @@
               </svg>
               <div>
                 <svg viewBox="0 0 24 24" class="icon">
+                  <title>Rate as hard</title>
                   <circle cx="12" cy="12" r="10" />
                   <path d="M16 16s-1.5-2-4-2-4 2-4 2M9 9h.01M15 9h.01" />
                 </svg>
@@ -71,6 +81,7 @@
               </svg>
               <div>
                 <svg viewBox="0 0 24 24" class="icon">
+                  <title>Edit</title>
                   <path
                     d="M21.17 6.81a1 1 0 0 0-3.98-3.98L3.84 16.16a2 2 0 0 0-.5.83l-1.32 4.36a.5.5 0 0 0 .62.62L7 20.66a2 2 0 0 0 .83-.5zM15 5l4 4" />
                 </svg>
@@ -82,6 +93,7 @@
               </svg>
               <div>
                 <svg viewBox="0 0 24 24" class="icon">
+                  <title>Back to decks</title>
                   <rect width="7" height="7" x="3" y="3" rx="1" />
                   <rect width="7" height="7" x="14" y="3" rx="1" />
                   <rect width="7" height="7" x="14" y="14" rx="1" />
@@ -104,7 +116,11 @@
       </div>
 
       <ul v-else class="decks">
-        <li v-for="deck in decks" :key="deck.id" :data-id="deck.id">
+        <li
+          v-for="deck in decks"
+          :key="deck.id"
+          :data-id="deck.id"
+          :style="{ 'view-transition-name' : `deck_${deck.id}`}">
           <button @click="selectDeck(deck.id)" class="deck stack" title="View deck">
             <ul class="stack">
               <li v-for="card in deck.cards.slice(0, 3)" :key="card.front">{{card.front}}</li>
@@ -112,15 +128,35 @@
             </ul>
           </button>
           <button @click="removeDeck(deck.id)" class="remove">
-            <svg viewBox="0 0 24 24" class="icon"><path d="M18 6 6 18M6 6l12 12" /></svg>
+            <svg viewBox="0 0 24 24" class="icon">
+              <title>Remove deck</title>
+              <path d="M18 6 6 18M6 6l12 12" />
+            </svg>
           </button>
         </li>
         <li>
           <button @click="addDeck" class="deck deck-add" title="Add new deck">
-            <svg viewBox="0 0 24 24" class="icon"><path d="M5 12h14M12 5v14" /></svg>
+            <svg viewBox="0 0 24 24" class="icon">
+              <title>Add new deck</title>
+              <path d="M5 12h14M12 5v14" />
+            </svg>
           </button>
         </li>
       </ul>
     </div>
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker
+            .register('/service-worker.js')
+            .then((registration) => {
+              console.log('Service Worker registered:', registration);
+            })
+            .catch((error) => {
+              console.log('Service Worker registration failed:', error);
+            });
+        });
+      }
+    </script>
   </body>
 </html>

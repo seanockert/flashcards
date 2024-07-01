@@ -27,6 +27,19 @@ const updateUrlParam = (key, value) => {
   window.history.pushState({}, '', url);
 };
 
+const prepareForStorage = (decks) => {
+  return decks.map((deck) => ({
+    id: deck.id,
+    cards: deck.cards.map((card) => ({
+      id: card.id,
+      front: card.front,
+      back: card.back,
+      weight: card.weight,
+      ease: card.ease
+    }))
+  }));
+};
+
 // Helper function to find the next item in an array by ID
 const findNextItem = (id, items) => {
   const index = items.findIndex((item) => item.id === id);
@@ -59,36 +72,39 @@ function Flashcards(props) {
     storageKey: 'fc_decks',
     mounted() {
       // Get cards from storage
-      const storedData = localStorage.getItem(this.storageKey);
-      // this.cards = storedData ? JSON.parse(storedData) : this.cards;
-      this.decks = storedData ? JSON.parse(storedData) : this.decks;
+      localforage
+        .getItem(this.storageKey)
+        .then((storedData) => {
+          this.decks = storedData ? JSON.parse(storedData) : [testDeck];
 
-      const urlParams = new URLSearchParams(window.location.search);
-      const deckId = urlParams.get('d');
+          const urlParams = new URLSearchParams(window.location.search);
+          const deckId = urlParams.get('d');
 
-      if (deckId) {
-        this.selectDeck(deckId);
-      }
+          if (deckId) {
+            this.selectDeck(deckId);
+          }
 
-      window.addEventListener('popstate', this.updateQueryParam);
-
-      // Update when list changes
-      // window.addEventListener('storage', this.handleStorageChange);
-      this.updateState(true);
+          window.addEventListener('popstate', this.updateQueryParam);
+          this.updateState(true);
+        })
+        .catch((error) => {
+          console.error('Error retrieving data:', error);
+          this.decks = [testDeck];
+        });
     },
     set cardsContent(newValue) {
       if (!this.activeDeck) {
         return;
       }
 
-      const newFronts = newValue.split('\n');
+      const cardContent = newValue.split('\n');
       const updatedCards = [];
 
-      for (let i = 0; i < newFronts.length; i++) {
-        const [front, back] = newFronts[i].split(',');
+      for (let i = 0; i < cardContent.length; i++) {
+        const [front, back] = cardContent[i].split(',');
         if (i < this.activeDeck.cards.length) {
           // Update existing card
-          updatedCards.push({ ...this.activeDeck.cards[i], front: front.trim(), back: back?.trim() ?? '' });
+          updatedCards.push({ ...this.activeDeck.cards[i], front: front.trim(), back: back ?? '' });
         } else {
           // Add new card if it's not empty or not the last line
           updatedCards.push({
@@ -117,11 +133,21 @@ function Flashcards(props) {
       this.activeDeck = this.decks[this.decks.length - 1];
       this.selectDeck(deckId);
     },
-    selectDeck(deckId) {
-      this.reviewQueue = [];
+    updateView(deckId) {
       this.activeDeck = this.decks.find((deck) => deck.id === deckId);
       updateUrlParam('d', deckId);
       this.updateState(!!deckId);
+    },
+    selectDeck(deckId) {
+      this.reviewQueue = [];
+
+      if ('startViewTransition' in document) {
+        const transition = document.startViewTransition(() => {
+          this.updateView(deckId);
+        });
+      } else {
+        this.updateView(deckId);
+      }
     },
     removeDeck(deckId) {
       if (confirm('Delete this deck?')) {
@@ -205,7 +231,10 @@ function Flashcards(props) {
       });
     },
     updateState(modifiedList) {
-      localStorage.setItem(this.storageKey, JSON.stringify(this.decks));
+      const storableData = prepareForStorage(this.decks);
+      localforage
+        .setItem(this.storageKey, JSON.stringify(storableData))
+        .catch((error) => console.error('Error saving data:', error));
 
       if (!this.activeDeck) {
         return;
